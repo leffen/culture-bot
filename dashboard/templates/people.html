@@ -1,0 +1,36 @@
+{{define "body"}}
+
+<div class="row">
+	<div class="col-sm">
+		<a href="/profile/new" class="m-2">Add New Person</a>
+	</div>
+</div>
+
+<div class="row">
+
+{{range .Data.Users}}
+<div class="col-sm">
+	<div class="card m-2" style="width: 300px;">
+		{{ $photosLen := len .Photos}}
+		{{if gt $photosLen 0}}
+			<img class="card-img-top" src="{{ index .Photos 0 }}" width="300">
+		{{else}}
+			<img class="card-img-top" src="http://via.placeholder.com/300x300" width="300">
+		{{end}}
+		<div class="card-block p-2">
+			<h4 class="card-title" style="text-transform: uppercase;">{{ .First }} {{ .Last }}</h4>
+			<p class="card-text">
+				{{if ne .First .Pronounce}}Pronounced as <strong>{{ .Pronounce }}</strong>.{{end}}
+				Average recognition score: <strong>{{ .AverageRecognition }}%</strong>
+			</p>
+		</div>
+		<div class="card-block p-2">
+			<a href="/profile?id={{ .Slack }}" class="card-link">Edit</a>
+			<a href="/analytics/delete/user?id={{ .Slack }}" class="card-link">Del</a>
+		</div>
+	</div>
+</div>
+{{end}}
+</div>
+
+{{end}}

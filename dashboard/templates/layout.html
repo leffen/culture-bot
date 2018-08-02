@@ -1,0 +1,40 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Culture Bot</title>
+	<link rel="icon" type="image/png" href="https://avatars0.githubusercontent.com/u/6192875?v=4&s=200" />
+	<link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css"/>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+<div class="container">
+	<nav class="navbar navbar-expand-lg navbar-light bg-light" style="margin-bottom: 50px;">
+		<a class="navbar-brand" href="/">
+			<img src="https://avatars0.githubusercontent.com/u/6192875?v=4&s=200" width="30" height="30" alt="">
+		</a>
+		<a class="navbar-brand" href="/">Culture Bot</a>
+
+		<div class="collapse navbar-collapse" id="navbarNav">
+			<ul class="navbar-nav">
+				<li class="nav-item">
+					<a class="nav-link" href="/client">Client View</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="/people">People</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="/settings">Settings</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+
+	{{template "body" . }}
+</div>
+
+</body>
+
+</html>
+{{end}}

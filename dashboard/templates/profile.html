@@ -1,0 +1,100 @@
+{{define "body"}}
+
+<div class="row">
+	<div class="col m-2">
+		<a href="#faces">Faces</a> | <a href="#log">Log</a>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col m-2">
+		<form method="POST" action="/analytics/update/user">
+			<input type="hidden" name="id" value="{{ .Data.User.Slack }}">
+
+			<div class="form-group">
+				<label>Email</label>
+				<input type="email" class="form-control" disabled="disabled" value="{{ .Data.User.Email }}">
+			</div>
+
+			<div class="form-group">
+				<label>Slack ID</label>
+				<input type="text" class="form-control" disabled="disabled" value="{{ .Data.User.Slack }}">
+			</div>
+
+			<div class="form-group">
+				<label>First Name</label>
+				<input type="text" class="form-control" value="{{ .Data.User.First }}" name="first">
+			</div>
+
+			<div class="form-group">
+				<label>Last Name</label>
+				<input type="text" class="form-control" value="{{ .Data.User.Last }}" name="last">
+			</div>
+
+			<div class="form-group">
+				<label>Pronounced As</label>
+				<input type="text" class="form-control" value="{{ .Data.User.Pronounce }}" name="pronounce">
+			</div>
+
+			<button type="submit" class="btn btn-primary">Save</button>
+		</form>
+	</div>
+</div>
+
+<br/><h2 id="faces" class="m-2">Faces</h2><br/>
+
+<div class="row">
+	<div class="col m-2">
+	<form method="POST" action="/train/file" enctype="multipart/form-data">
+		<input type="hidden" name="slack" value="{{ .Data.User.Slack }}">
+
+		<div class="form-group">
+			<input name="file" type="file" class="form-control-file">
+		</div>
+
+		<button type="submit" class="btn btn-primary">Upload (PNG)</button>
+	</form>
+	</div>
+</div>
+
+<div class="row">
+
+{{ $slack := .Data.User.Slack }}
+{{range .Data.Photos}}
+<div class="col-sm">
+	<div class="card m-2" style="width: 300px;">
+		<img class="card-img-top" src="/{{ .Filename }}" width="300">
+		<div class="card-block p-2">
+			<a href="/analytics/delete/photo?id={{ .ID }}&slack={{ $slack }}" class="card-link">Del</a>
+		</div>
+	</div>
+</div>
+{{end}}
+
+</div>
+
+<br/><h2 id="log" class="m-2">Log</h2><br/>
+
+<div class="row">
+	<div class="col m-2">
+			<table class="table">
+				<thead>
+					<tr>
+						<th scope="col">Event</th>
+						<th scope="col">Time</th>
+						<th scope="col">Value</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{ range .Data.Events }}
+					<tr>
+						<td>{{ .Key }}</td>
+						<td>{{ .AtTime.Format "15:04 Jan 02" }}</td>
+						<td>{{ .Value }}</td>
+					</tr>
+					{{end}}
+				</tbody>
+			</table>
+	</div>
+</div>
+{{end}}

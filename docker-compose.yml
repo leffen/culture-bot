@@ -1,0 +1,29 @@
+version: '3'
+services:
+  dashboard:
+    build:
+      context: .
+    environment:
+      - "SLACK_TOKEN="
+      - "CALENDAR_CLEINT_ID="
+      - "CALENDAR_CLIENT_SECRET="
+      - "TZ=Asia/Ho_Chi_Minh"
+      - "NGROK_ADDR=https://6b5ddbc2.ngrok.io"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - facebox
+    links:
+      - facebox
+    volumes:
+      - "./faces:/go/src/github.com/plutov/culture-bot/faces"
+      - "./faces-db:/go/src/github.com/plutov/culture-bot/faces-db"
+      - "./dashboard/templates:/go/src/github.com/plutov/culture-bot/dashboard/templates"
+      - "./stats.db:/go/src/github.com/plutov/culture-bot/stats.db"
+
+  facebox:
+    image: machinebox/facebox
+    environment:
+      - "MB_KEY="
+    ports:
+      - "8080:8080"

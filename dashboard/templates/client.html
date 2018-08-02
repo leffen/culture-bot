@@ -1,0 +1,209 @@
+{{define "body"}}
+<center>
+	<canvas id="canvas"></canvas>
+	<video autoplay="true" id="video" style="display: none;"></video>
+</center>
+
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+<script type="text/javascript">
+var canvas = document.getElementById('canvas');
+var context = canvas.getContext('2d');
+var video = document.getElementById("video");
+
+sessionUser = {};
+sessionDayTime = "";
+sessionOpened = false;
+sessionStep = 0; // 1 - greeted, 2 - user replied, 3 - bot asked about meeting, 4 - user relplied
+greeted = false;
+
+recognitionStarted = false;
+recognition = new webkitSpeechRecognition();
+recognition.continuous = true;
+recognition.interimResults = true;
+
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.oGetUserMedia;
+
+if (navigator.getUserMedia) {
+	navigator.getUserMedia({video: true}, handleVideo, videoError);
+}
+
+function handleVideo(stream) {
+	video.src = window.URL.createObjectURL(stream);
+}
+
+function videoError(e) {
+	console.log(e);
+}
+
+function speak(text, onend, timeout) {
+	console.log('stopped recognition');
+	recognitionStarted = false;
+	recognition.stop();
+
+	// Create a new instance of SpeechSynthesisUtterance.
+	var msg = new SpeechSynthesisUtterance();
+
+	// Set the text.
+	msg.text = text;
+	msg.volume = 1;
+	msg.rate = 1;
+	msg.pitch = 1;
+	msg.voice = speechSynthesis.getVoices().filter(function(voice) {
+		return voice.name == 'Tessa';
+	})[0];
+	msg.onend = function() {
+		console.log('speech end');
+	}
+
+	// Queue this utterance.
+	window.speechSynthesis.speak(msg);
+
+	// Because onend doesn't work always properly
+	setTimeout(function() {
+		if (!recognitionStarted) {
+			recognitionStarted = true;
+			recognition.start();
+			console.log('started recognition');
+		}
+		onend();
+	}, timeout);
+}
+
+// speech to text
+function stt() {
+	recognition.onresult = function(e) {
+		if (e.results.length > 0 && e.results[0][0].transcript) {
+			if (sessionOpened && recognitionStarted) {
+				var text = e.results[0][0].transcript.toLowerCase();
+				console.log(text);
+				if (sessionStep == 1) {
+					if (isYes(text)) {
+						sessionStep = 2;
+						speak('Awesome! Shall I tell you your next meeting?', function() {
+							sessionStep = 3;
+							// If user didn't say anything in 7s
+							setTimeout(function() {
+								if (sessionStep == 3) {
+									done();
+								}
+							}, 7000);
+						}, 2500);
+					} else if (isNo(text)) {
+						speak('Oops! Seems like my creators need to train me some more. See you!', function() {
+							done();
+						}, 3500);
+					}
+				}
+				if (sessionStep == 3) {
+					sessionStep = 4;
+
+					if (isYes(text)) {
+						$.ajax({
+							type: "POST",
+							dataType: "json",
+							url: "/calendar",
+							data: {
+								slack: sessionUser.Slack,
+							}
+						}).success(function(resp) {
+							if (resp && resp.Meeting) {
+								speak(resp.Meeting, function() {
+									done();
+								}, 7500);
+							} else {
+								done();
+							}
+						}).error(function() {
+							done();
+							console.log('error');
+						});
+					} else if (isNo(text)) {
+						speak('No problem, I am always here to help you. Have a great '+sessionDayTime+'!', function() {
+							done();
+						}, 3500);
+					}
+				}
+			}
+		}
+	}
+}
+
+function isYes(text) {
+	return text.indexOf("yes") !== -1 ||
+		text.indexOf("sure") !== -1 ||
+		text.indexOf("ok") !== -1 ||
+		text.indexOf("yea") !== -1 ||
+		text.indexOf("yep") !== -1 ||
+		text.indexOf("yea") !== -1 ||
+		text.indexOf("it is") !== -1 ||
+		text.indexOf("yeah") !== -1 ||
+		text.indexOf("yup") !== -1 ||
+		text.indexOf("ya") !== -1 ||
+		text.indexOf("thats me") !== -1 ||
+		text.indexOf("correct") !== -1 ||
+		text.indexOf("right") !== -1 ||
+		text.indexOf("why not") !== -1;
+}
+
+function isNo(text) {
+	return text.indexOf("no") !== -1 ||
+		text.indexOf("nope") !== -1 ||
+		text.indexOf("oops") !== -1 ||
+		text.indexOf("not me") !== -1 ||
+		text.indexOf("nah") !== -1 ||
+		text.indexOf("no thanks") !== -1 ||
+		text.indexOf("not") !== -1;
+}
+
+function done() {
+	sessionStep = 0;
+	sessionOpened = false;
+	console.log('session done');
+}
+
+setInterval(function(){
+	canvas.width = video.videoWidth;
+	canvas.height = video.videoHeight;
+	context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+}, 250);
+
+window.speechSynthesis.onvoiceschanged = function() {
+	stt();
+
+	(function recognize() {
+		if (sessionOpened) {
+			setTimeout(recognize, 500);
+			return;
+		}
+
+		$.ajax({
+			type: "POST",
+			dataType: "json",
+			url: "/recognize",
+			data: {
+				img: canvas.toDataURL(),
+			}
+		}).success(function(resp) {
+			if (resp && resp.Message && !sessionOpened) {
+				sessionOpened = true;
+				sessionUser = resp.User;
+				sessionDayTime = resp.DayTime;
+				speak(resp.Message, function() {
+					sessionStep = 1;
+					// Stop if user didn't say anything in 7s
+					setTimeout(function() {
+						if (sessionStep == 1) {
+							done();
+						}
+					}, 7000);
+				}, 2300);
+			}
+			setTimeout(recognize, 500);
+		}).error(function(msg) {
+			console.log('error');
+			setTimeout(recognize, 500);
+		});
+	}());
+}
+</script>
+{{end}}
